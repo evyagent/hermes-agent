@@ -320,6 +320,7 @@ import {
 } from './native-oauth'
 import { runNativeLogin } from './native-oauth-login'
 import { EVY_CONNECTION_ID, evyConnectionEntry, runEvyConnect } from './evy-connect'
+import { createEvyFirstRunWindow } from './evy-first-run-window'
 import { loadNativeTokenSet, type NativeTokenStoreIo, persistNativeTokenSet } from './native-token-store'
 import { registerNativeNotifications } from './notification-ipc'
 import { serializeJsonBody, setJsonRequestHeaders } from './oauth-net-request'
@@ -13294,8 +13295,12 @@ function latchedBootFailure(): Error | null {
  * shows the "not signed in, open Settings" dead end.
  */
 let evyConnectInFlight: Promise<void> | null = null
-async function ensureEvyConnectionAtBoot() {
+type EvyFirstRunStep = 'connect' | 'signin'
+async function ensureEvyConnectionAtBoot(
+  opts: { onStep?: (step: EvyFirstRunStep, openedUrl?: string) => void } = {}
+) {
   if (evyConnectInFlight) return evyConnectInFlight
+  const onStep = opts.onStep || (() => {})
   evyConnectInFlight = (async () => {
     let registry = readDesktopConnectionsRegistry()
     let evy = registry.connections.find(c => c.id === EVY_CONNECTION_ID)
@@ -13304,7 +13309,13 @@ async function ensureEvyConnectionAtBoot() {
         { error: null, message: 'Entra con tu cuenta EVY en el navegador…', phase: 'evy.connect', progress: 5, running: true },
         { allowDecrease: true }
       )
-      const result = await runEvyConnect({ openExternal: url => shell.openExternal(url), log: rememberLog })
+      const result = await runEvyConnect({
+        openExternal: url => {
+          onStep('connect', url)
+          return shell.openExternal(url)
+        },
+        log: rememberLog
+      })
       await saveRegistryConnection(evyConnectionEntry(result))
       registry = setPrimaryConnection(readDesktopConnectionsRegistry(), EVY_CONNECTION_ID)
       registry = setConnectionLaunchMode(registry, 'primary')
@@ -13317,6 +13328,7 @@ async function ensureEvyConnectionAtBoot() {
         { error: null, message: 'Confirma tu cuenta EVY en el navegador…', phase: 'evy.signin', progress: 8, running: true },
         { allowDecrease: true }
       )
+      onStep('signin')
       const login = await loginRemoteGateway(evy.url)
       if (!login.ok || !login.connected) {
         throw new Error(login.error || 'EVY sign-in did not complete')
@@ -13326,6 +13338,52 @@ async function ensureEvyConnectionAtBoot() {
     evyConnectInFlight = null
   })
   return evyConnectInFlight
+}
+
+/**
+ * EVY fork: the first launch happens BEFORE the main window exists. A small
+ * EVY window explains the browser round trip (sign in / sign up / wait for
+ * the assistant) and offers a retry; closing it before success quits the
+ * app, since there is nothing to show without an assistant.
+ */
+function runEvyFirstRunIfNeeded(): Promise<void> {
+  const registry = readDesktopConnectionsRegistry()
+  const evy = registry.connections.find(c => c.id === EVY_CONNECTION_ID)
+  if (evy?.url && _loadNativeTokens(evy.url)) return Promise.resolve()
+  return new Promise<void>(resolve => {
+    let done = false
+    let lastOpened: string | null = null
+    const ui = createEvyFirstRunWindow({
+      icon: getAppIconPath(),
+      log: rememberLog,
+      onRetry: () => void attempt()
+    })
+    const attempt = async () => {
+      try {
+        await ensureEvyConnectionAtBoot({
+          onStep: (step, url) => {
+            if (url) lastOpened = url
+            ui.show(step, '', lastOpened)
+          }
+        })
+        done = true
+        ui.close()
+        resolve()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        rememberLog(`[evy-first-run] failed: ${firstLine(message)}`)
+        ui.show('error', firstLine(message), lastOpened)
+      }
+    }
+    ui.show('connect', '', null)
+    app.on('window-all-closed', () => {
+      if (!done) {
+        rememberLog('[evy-first-run] window closed before the assistant was connected; quitting')
+        app.quit()
+      }
+    })
+    void attempt()
+  })
 }
 
 async function runHermesStart({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}) {
@@ -18843,7 +18901,7 @@ app.on('open-url', (event, url) => {
   handleDeepLink(url)
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Warm the login-shell PATH resolution immediately so it usually completes
   // before the backend start path awaits the same single-flight promise.
   void ensureLoginShellPath()
@@ -18939,6 +18997,9 @@ app.whenReady().then(() => {
   // its worker waits for the install marker to clear, then reopens every scope
   // captured by the original transaction before removing the journal entry.
   void resumeManagedSshRecoveries()
+  // EVY fork: register + sign in to the customer's assistant before the
+  // first window exists (see runEvyFirstRunIfNeeded).
+  await runEvyFirstRunIfNeeded()
   installApplicationMenuAfterFirstWindow({
     isMac: IS_MAC,
     buildMenu: buildApplicationMenu,
