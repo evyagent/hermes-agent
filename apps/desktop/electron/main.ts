@@ -319,6 +319,7 @@ import {
   tokenNeedsRefresh
 } from './native-oauth'
 import { runNativeLogin } from './native-oauth-login'
+import { EVY_CONNECTION_ID, evyConnectionEntry, runEvyConnect } from './evy-connect'
 import { loadNativeTokenSet, type NativeTokenStoreIo, persistNativeTokenSet } from './native-token-store'
 import { registerNativeNotifications } from './notification-ipc'
 import { serializeJsonBody, setJsonRequestHeaders } from './oauth-net-request'
@@ -13284,6 +13285,49 @@ function latchedBootFailure(): Error | null {
   return bootstrapFailure ?? backendStartFailure ?? remoteReauthFailure ?? null
 }
 
+/**
+ * EVY fork (EVY-1188): the desktop only ever talks to the customer's own
+ * assistant. On a registry without the `evy` connection, ask the central where
+ * it is (system browser: sign in / sign up / wait for provisioning) and save it
+ * as the primary remote OAuth gateway; then, if that gateway has no native
+ * tokens yet, run the phase-1 OIDC sign-in right away so the boot below never
+ * shows the "not signed in, open Settings" dead end.
+ */
+let evyConnectInFlight: Promise<void> | null = null
+async function ensureEvyConnectionAtBoot() {
+  if (evyConnectInFlight) return evyConnectInFlight
+  evyConnectInFlight = (async () => {
+    let registry = readDesktopConnectionsRegistry()
+    let evy = registry.connections.find(c => c.id === EVY_CONNECTION_ID)
+    if (!evy) {
+      updateBootProgress(
+        { error: null, message: 'Entra con tu cuenta EVY en el navegador…', phase: 'evy.connect', progress: 5, running: true },
+        { allowDecrease: true }
+      )
+      const result = await runEvyConnect({ openExternal: url => shell.openExternal(url), log: rememberLog })
+      await saveRegistryConnection(evyConnectionEntry(result))
+      registry = setPrimaryConnection(readDesktopConnectionsRegistry(), EVY_CONNECTION_ID)
+      registry = setConnectionLaunchMode(registry, 'primary')
+      writeDesktopConnectionsRegistry(registry)
+      evy = registry.connections.find(c => c.id === EVY_CONNECTION_ID)
+      rememberLog(`[evy-connect] registered ${result.url} as the primary gateway`)
+    }
+    if (evy?.url && !_loadNativeTokens(evy.url)) {
+      updateBootProgress(
+        { error: null, message: 'Confirma tu cuenta EVY en el navegador…', phase: 'evy.signin', progress: 8, running: true },
+        { allowDecrease: true }
+      )
+      const login = await loginRemoteGateway(evy.url)
+      if (!login.ok || !login.connected) {
+        throw new Error(login.error || 'EVY sign-in did not complete')
+      }
+    }
+  })().finally(() => {
+    evyConnectInFlight = null
+  })
+  return evyConnectInFlight
+}
+
 async function runHermesStart({ supervisorRecovery = false }: { supervisorRecovery?: boolean } = {}) {
   // Only the single-instance lock holder may reap/spawn/claim the desktop
   // backend. A lock-losing instance must stay inert even if some path reaches
@@ -13344,6 +13388,11 @@ async function runHermesStart({ supervisorRecovery = false }: { supervisorRecove
   // the remote branch returns and never runs the migration. Runs once;
   // no-op when the preference file already exists.
   migrateActiveProfileIfMissing()
+
+  // EVY fork: no local runtime, ever. Register the customer's assistant on
+  // the first launch (browser round trip to the central) and make sure the
+  // native sign-in has run before the remote boot below dials it.
+  await ensureEvyConnectionAtBoot()
 
   const connectionAttempt = backendConnectionState.startAttempt()
   const primaryProfile = primaryProfileKey()
@@ -16722,7 +16771,9 @@ async function fetchJsonForBackend(
 }
 
 ipcMain.handle('hermes:connection-config:probe', async (_event, rawUrl) => probeRemoteAuthMode(rawUrl))
-ipcMain.handle('hermes:connection-config:oauth-login', async (_event, rawUrl) => {
+ipcMain.handle('hermes:connection-config:oauth-login', async (_event, rawUrl) => loginRemoteGateway(rawUrl))
+
+async function loginRemoteGateway(rawUrl: unknown) {
   // Capability-gated login (RFC 8252). Probe the gateway's public /api/status
   // for supported auth_flows and /api/auth/providers for provider capabilities:
   //   - all providers support password → always use the embedded login window
@@ -16800,7 +16851,7 @@ ipcMain.handle('hermes:connection-config:oauth-login', async (_event, rawUrl) =>
   }
 
   return { ok: true, baseUrl, connected }
-})
+}
 ipcMain.handle('hermes:connection-config:oauth-logout', async (_event, rawUrl) => {
   const baseUrl = normalizeRemoteBaseUrl(rawUrl)
 
