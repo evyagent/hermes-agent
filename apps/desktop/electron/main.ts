@@ -319,7 +319,7 @@ import {
   tokenNeedsRefresh
 } from './native-oauth'
 import { runNativeLogin } from './native-oauth-login'
-import { EVY_CONNECTION_ID, evyConnectionEntry, runEvyConnect } from './evy-connect'
+import { EVY_CONNECTION_ID, evyConnectionEntry, runEvyConnect, waitForGatewayGate } from './evy-connect'
 import { createEvyFirstRunWindow } from './evy-first-run-window'
 import { loadNativeTokenSet, type NativeTokenStoreIo, persistNativeTokenSet } from './native-token-store'
 import { registerNativeNotifications } from './notification-ipc'
@@ -13295,7 +13295,7 @@ function latchedBootFailure(): Error | null {
  * shows the "not signed in, open Settings" dead end.
  */
 let evyConnectInFlight: Promise<void> | null = null
-type EvyFirstRunStep = 'connect' | 'signin'
+type EvyFirstRunStep = 'connect' | 'waiting' | 'signin'
 async function ensureEvyConnectionAtBoot(
   opts: { onStep?: (step: EvyFirstRunStep, openedUrl?: string) => void } = {}
 ) {
@@ -13328,6 +13328,16 @@ async function ensureEvyConnectionAtBoot(
         { error: null, message: 'Confirma tu cuenta EVY en el navegador…', phase: 'evy.signin', progress: 8, running: true },
         { allowDecrease: true }
       )
+      // A freshly provisioned assistant may still be starting its gated
+      // dashboard: wait for the gate before probing, or the login strategy
+      // resolves against the proxy's 503 and picks the wrong flow.
+      onStep('waiting')
+      const gated = await waitForGatewayGate(evy.url, {
+        onTick: n => rememberLog(`[evy-connect] waiting for the assistant's gate (attempt ${n})`)
+      })
+      if (!gated) {
+        throw new Error('Tu asistente no responde todavía. Vuelve a intentarlo en unos minutos.')
+      }
       onStep('signin')
       const login = await loginRemoteGateway(evy.url)
       if (!login.ok || !login.connected) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { evyCentralUrl, evyConnectionEntry, isAcceptableGatewayUrl, runEvyConnect } from './evy-connect'
+import { evyCentralUrl, evyConnectionEntry, isAcceptableGatewayUrl, runEvyConnect, waitForGatewayGate } from './evy-connect'
 
 async function get(url: string): Promise<{ status: number; text: string }> {
   const res = await fetch(url)
@@ -62,3 +62,34 @@ describe('evy-connect', () => {
     )
   })
 })
+
+describe('waitForGatewayGate', () => {
+  it('waits through 503s and an ungated status until the gate is on', async () => {
+    const answers = [
+      () => Promise.reject(new Error('fetch failed')),
+      () => Promise.resolve({ error: 'dashboard_unavailable' }),
+      () => Promise.resolve({ auth_required: false }),
+      () => Promise.resolve({ auth_required: true, auth_providers: ['self-hosted'] })
+    ]
+    const ticks: number[] = []
+    const ok = await waitForGatewayGate('https://65-108-1-2.sslip.io:8443/', {
+      fetchJson: () => (answers.shift() as () => Promise<unknown>)(),
+      intervalMs: 1,
+      timeoutMs: 1000,
+      onTick: n => ticks.push(n),
+      sleep: async () => {}
+    })
+    expect(ok).toBe(true)
+    expect(ticks).toEqual([1, 2, 3, 4])
+  })
+  it('gives up after the deadline', async () => {
+    const ok = await waitForGatewayGate('https://65-108-1-2.sslip.io:8443', {
+      fetchJson: () => Promise.reject(new Error('fetch failed')),
+      intervalMs: 1,
+      timeoutMs: 5,
+      sleep: ms => new Promise(r => setTimeout(r, ms))
+    })
+    expect(ok).toBe(false)
+  })
+})
+

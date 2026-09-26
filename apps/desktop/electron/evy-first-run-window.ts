@@ -10,15 +10,19 @@
 import { BrowserWindow, shell } from 'electron'
 
 export interface EvyFirstRunWindow {
-  show(step: 'connect' | 'signin' | 'error', detail?: string, reopenUrl?: string | null): void
+  show(step: 'connect' | 'waiting' | 'signin' | 'error', detail?: string, reopenUrl?: string | null): void
   close(): void
   isOpen(): boolean
 }
 
-const STEP_TEXT: Record<'connect' | 'signin' | 'error', { title: string; body: string }> = {
+const STEP_TEXT: Record<'connect' | 'waiting' | 'signin' | 'error', { title: string; body: string }> = {
   connect: {
     title: 'Entra con tu cuenta EVY',
     body: 'Se ha abierto tu navegador. Inicia sesión (o crea tu cuenta) y vuelve aquí: la aplicación se conectará sola a tu asistente.'
+  },
+  waiting: {
+    title: 'Tu asistente está arrancando',
+    body: 'Un momento: en cuanto responda te pediremos confirmar tu cuenta en el navegador.'
   },
   signin: {
     title: 'Confirma tu cuenta',
@@ -30,7 +34,7 @@ const STEP_TEXT: Record<'connect' | 'signin' | 'error', { title: string; body: s
   }
 }
 
-function html(step: 'connect' | 'signin' | 'error', detail: string, reopenUrl: string | null): string {
+function html(step: 'connect' | 'waiting' | 'signin' | 'error', detail: string, reopenUrl: string | null): string {
   const t = STEP_TEXT[step]
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
   const reopen = reopenUrl

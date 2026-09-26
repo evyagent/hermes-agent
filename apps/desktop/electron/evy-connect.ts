@@ -121,3 +121,48 @@ export function evyConnectionEntry(result: EvyConnectResult) {
     authMode: 'oauth' as const
   }
 }
+
+/**
+ * A just-provisioned assistant answers a little later than the central's
+ * redirect: the VPS is "ready" before its gated dashboard has finished
+ * starting, and the 8443 proxy answers 503 until then. Poll the public
+ * `/api/status` until it reports `auth_required: true` (the phase-1 gate), so
+ * the sign-in that follows never probes a half-started gateway and falls back
+ * to the wrong login flow. Resolves true when gated, false on timeout.
+ */
+export async function waitForGatewayGate(
+  gatewayUrl: string,
+  deps: {
+    fetchJson?: (url: string) => Promise<unknown>
+    timeoutMs?: number
+    intervalMs?: number
+    onTick?: (attempt: number) => void
+    sleep?: (ms: number) => Promise<void>
+  } = {}
+): Promise<boolean> {
+  const fetchJson =
+    deps.fetchJson ||
+    (async (url: string) => {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+      return res.json()
+    })
+  const sleep = deps.sleep || (ms => new Promise<void>(r => setTimeout(r, ms)))
+  const timeoutMs = deps.timeoutMs ?? 5 * 60 * 1000
+  const intervalMs = deps.intervalMs ?? 5000
+  const deadline = Date.now() + timeoutMs
+  let attempt = 0
+  while (Date.now() <= deadline) {
+    attempt += 1
+    deps.onTick?.(attempt)
+    try {
+      const body = (await fetchJson(`${gatewayUrl.replace(/\/+$/, '')}/api/status`)) as { auth_required?: unknown }
+      if (body && body.auth_required === true) return true
+    } catch {
+      // not up yet
+    }
+    if (Date.now() + intervalMs > deadline) break
+    await sleep(intervalMs)
+  }
+  return false
+}
+
