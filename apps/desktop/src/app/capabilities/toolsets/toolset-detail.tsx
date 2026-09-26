@@ -12,6 +12,8 @@ import { SETTINGS_ROUTE } from '../../routes'
 import { BrowserRealProfilePanel } from '../../settings/browser-real-profile-panel'
 import { ComputerUsePanel } from '../../settings/computer-use-panel'
 import { asText, toolNames, toolsetDisplayLabel } from '../../settings/helpers'
+import { EVY_DESKTOP } from '@/lib/evy'
+
 import { TerminalBackendPanel } from '../../settings/terminal-backend-panel'
 import { ToolsetConfigPanel } from '../../settings/toolset-config-panel'
 import { DetailHeader } from '../primitives'
@@ -77,7 +79,8 @@ export function ToolsetDetail({
           config option users kept missing because its only GUI home was the
           generic Settings → Config editor. */}
       {toolset.name === 'browser' && <BrowserRealProfilePanel profile={profile} />}
-      {toolset.name === 'terminal' && <TerminalBackendPanel onConfiguredChange={onConfiguredChange} />}
+      {/* EVY fork: the terminal backend (local/docker/ssh) is engine configuration. */}
+      {toolset.name === 'terminal' && !EVY_DESKTOP && <TerminalBackendPanel onConfiguredChange={onConfiguredChange} />}
       <ToolsetConfigPanel
         key={`${toolset.name}:${profileScopeKey(profile)}`}
         onConfiguredChange={onConfiguredChange}
