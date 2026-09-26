@@ -287,7 +287,8 @@ describe('CapabilitiesView toolset management', { timeout: 60_000 }, () => {
     )
   })
 
-  it('mounts the hub iframe lazily and keeps it (hidden) across tab switches', async () => {
+  // EVY fork: Capabilities shows the Skills tab only (src/lib/evy.ts); no tab switch to cover.
+  it.skip('mounts the hub iframe lazily and keeps it (hidden) across tab switches', async () => {
     // On a non-Skills tab the docs-site iframe must not exist at all — an
     // eagerly mounted hub is exactly the Capabilities lag bug.
     await renderSkills() // ?tab=toolsets

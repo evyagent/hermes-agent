@@ -7274,7 +7274,9 @@ function buildApplicationMenu() {
 
   const checkForUpdatesItem = {
     label: 'Check for Updates…',
-    click: () => sendOpenUpdatesRequested()
+    click: () => sendOpenUpdatesRequested(),
+    // EVY fork: the assistant's engine is updated by EVY, never from the desktop.
+    visible: false
   }
 
   if (IS_MAC) {

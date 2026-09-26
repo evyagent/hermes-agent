@@ -135,6 +135,7 @@ import { $focusedSessionIsTile, $focusedStoredSessionId, $workingSessionIds } fr
 import { ackAllSessionsRead } from '@/store/session-unread'
 import { markSessionUnread } from '@/store/session-unread-remote'
 import { $archivedSessions, loadArchivedSessions } from '@/store/sidebar-archive'
+import { EVY_SIDEBAR_NAV_HIDDEN } from '@/lib/evy'
 import { applySidebarNavPrefs, SIDEBAR_NAV_PREFS_AREA } from '@/store/sidebar-nav'
 import { $sidebarSessionRankIds } from '@/store/sidebar-sort'
 
@@ -442,7 +443,10 @@ export function ChatSidebar({
   const navPrefs = useContributions(SIDEBAR_NAV_PREFS_AREA)
 
   const navItems = useMemo(
-    () => applySidebarNavPrefs([...SIDEBAR_NAV, ...contributedNav].filter(shownInMode(interfaceMode)), navPrefs),
+    () => applySidebarNavPrefs(
+        [...SIDEBAR_NAV, ...contributedNav].filter(shownInMode(interfaceMode)).filter(item => !EVY_SIDEBAR_NAV_HIDDEN.has(item.id)),
+        navPrefs
+      ),
     [contributedNav, interfaceMode, navPrefs]
   )
 

@@ -25,10 +25,13 @@ import { SkillsTab } from './skills/skills-tab'
 import { refreshToolCalls } from './toolsets/tool-calls'
 import { TOOLSETS_QUERY_KEY, toolsetSearchTerms, useToolsetsQuery, visibleToolsetCount } from './toolsets/toolsets-data'
 import { ToolsetsTab } from './toolsets/toolsets-tab'
+import { EVY_CAPABILITY_MODES } from '@/lib/evy'
 
 // Skills Hub browsing lives inside the Skills tab. Legacy `?tab=hub`
 // links fall back to 'skills' via useRouteEnumParam.
 const CAPABILITY_MODES = ['skills', 'toolsets', 'connectors', 'plugins'] as const
+// EVY fork: only the tabs the customer may use (see src/lib/evy.ts).
+const EVY_VISIBLE_MODES: readonly string[] = CAPABILITY_MODES.filter(m => EVY_CAPABILITY_MODES.includes(m))
 
 type CapabilityMode = (typeof CAPABILITY_MODES)[number]
 
@@ -185,7 +188,7 @@ export function CapabilitiesView({
         { id: 'toolsets', label: t.skills.tabToolsets, meta: toolsets ? visibleToolsetCount(toolsets) : null },
         { id: 'connectors', label: t.connectorsPage.title },
         { id: 'plugins', label: t.skills.tabPlugins }
-      ]}
+      ].filter(tab => EVY_VISIBLE_MODES.includes(tab.id))}
     >
       <div className="flex h-full flex-col">
         {mode !== 'plugins' && <CapabilityScopeSelector scope={scope} />}

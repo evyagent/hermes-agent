@@ -48,6 +48,7 @@ import { BILLING_VIEWS, BillingSettings, type BillingSubView } from './billing'
 import { deriveBillingView, useBillingState, useSubscriptionState } from './billing/use-billing-state'
 import { ConfigSettings } from './config-settings'
 import { SECTIONS } from './constants'
+import { EVY_SETTINGS_DEFAULT_VIEW, EVY_SETTINGS_HIDDEN } from '@/lib/evy'
 import { GatewaySettings } from './gateway-settings'
 import { KeybindSettings } from './keybind-settings'
 import { KEYS_VIEWS, KeysSettings, type KeysView } from './keys-settings'
@@ -95,7 +96,7 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
     }
   }, [navigate, search])
 
-  const [activeView] = useRouteEnumParam('tab', SETTINGS_VIEWS, 'config:model' as SettingsViewId)
+  const [activeView] = useRouteEnumParam('tab', SETTINGS_VIEWS, EVY_SETTINGS_DEFAULT_VIEW as SettingsViewId)
   const params = new URLSearchParams(search)
   const requestedSubpage = params.get('page')
   const subpage = resolveSettingsSubpage(activeView, params)
@@ -393,7 +394,10 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
             onSelect: () => setActiveView('about')
           }
         ] as OverlayNavGroup[]
-      ).map(group => {
+      )
+        // EVY fork: engine configuration and Hermes self-management stay out.
+        .filter(group => !EVY_SETTINGS_HIDDEN.has(group.id))
+        .map(group => {
         const view = group.id as SettingsViewId
         const children = settingsSubpages(view)
 

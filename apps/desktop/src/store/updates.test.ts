@@ -4,6 +4,9 @@ import type { DesktopUpdateStatus } from '@/global'
 
 const storage = new Map<string, string>()
 
+// EVY fork: these upstream tests cover the skew toast, which the EVY build
+// turns off (src/lib/evy.ts); run them with the switch on.
+vi.mock('@/lib/evy', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/evy')>()), EVY_SELF_UPDATE_ENABLED: true }))
 vi.mock('@/lib/storage', () => ({
   persistBoolean: (key: string, value: boolean) => {
     storage.set(key, String(value))

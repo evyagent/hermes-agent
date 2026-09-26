@@ -149,7 +149,7 @@ describe('ChatSidebar navigation activity', () => {
 
     for (const [pathname, currentView, label] of [
       ['/capabilities', 'capabilities', 'Capabilities'],
-      ['/messaging', 'messaging', 'Messaging'],
+      // EVY fork: the Messaging row is hidden (src/lib/evy.ts); Conexiones owns it.
       ['/artifacts', 'artifacts', 'Artifacts'],
       ['/cron', 'cron', 'Scheduled jobs']
     ] as const) {

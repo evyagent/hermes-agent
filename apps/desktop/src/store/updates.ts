@@ -3,6 +3,7 @@
  * surfaces it as an ambient pill, and orchestrates the apply flow.
  */
 
+import { EVY_SELF_UPDATE_ENABLED } from '@/lib/evy'
 import { atom } from 'nanostores'
 
 import type {
@@ -153,6 +154,11 @@ function isInstallMethodToastSnoozed(): boolean {
  * doesn't nag on every thread switch.
  */
 export function reportBackendContract(contract: number | undefined): void {
+  // EVY fork: the assistant's engine is updated by EVY, never from the desktop.
+  if (!EVY_SELF_UPDATE_ENABLED) {
+    dismissNotification(SKEW_TOAST_ID)
+    return
+  }
   if ((contract ?? 0) >= REQUIRED_BACKEND_CONTRACT) {
     dismissNotification(SKEW_TOAST_ID)
     // Backend caught up — forget any prior snooze so a future regression warns
