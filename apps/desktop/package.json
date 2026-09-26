@@ -3,7 +3,7 @@
   "productName": "EVY",
   "private": true,
   "version": "0.17.6",
-  "description": "Native desktop shell for Hermes Agent.",
+  "description": "EVY desktop app (Hermes Desktop fork).",
   "author": "Nous Research",
   "repository": {
     "type": "git",
@@ -198,7 +198,7 @@
     "executableName": "EVY",
     "protocols": [
       {
-        "name": "Hermes Protocol",
+        "name": "EVY Protocol",
         "schemes": [
           "hermes"
         ]
@@ -267,7 +267,7 @@
       ]
     },
     "dmg": {
-      "title": "Install Hermes",
+      "title": "Install EVY",
       "backgroundColor": "#f5f5f7",
       "iconSize": 96,
       "window": {
@@ -298,8 +298,8 @@
     },
     "linux": {
       "category": "Development",
-      "maintainer": "Nous Research <support@nousresearch.com>",
-      "synopsis": "Native desktop shell for Hermes Agent.",
+      "maintainer": "EVY <hola@evyagent.ai>",
+      "synopsis": "EVY desktop app.",
       "target": [
         "AppImage",
         "deb",
@@ -310,8 +310,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Hermes",
-      "uninstallDisplayName": "Hermes",
+      "shortcutName": "EVY",
+      "uninstallDisplayName": "EVY",
       "warningsAsErrors": false
     }
   }

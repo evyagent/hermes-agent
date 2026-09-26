@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { type Translations, useI18n } from '@/i18n'
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, RefreshCw } from '@/lib/icons'
+import { EVY_SELF_UPDATE_ENABLED } from '@/lib/evy'
 import { cn } from '@/lib/utils'
 import {
   $desktopVersion,
@@ -180,6 +181,10 @@ function AppUpdatesSettings({ includeUninstall }: { includeUninstall: boolean })
       </div>
 
       <div className="mx-auto mt-4 w-full max-w-2xl">
+        {/* EVY fork: the app updates through EVY's own installers, never the
+            Hermes channel (an engine self-update would break the tenant). */}
+        {EVY_SELF_UPDATE_ENABLED && (
+          <>
         <SectionHeading icon={RefreshCw} title={a.updates} />
 
         <div
@@ -250,6 +255,8 @@ function AppUpdatesSettings({ includeUninstall }: { includeUninstall: boolean })
           id={settingElementId(SETTING_IDS.about.automaticUpdates)}
           title={a.automaticUpdates}
         />
+          </>
+        )}
 
         {includeUninstall && <UninstallSection />}
       </div>

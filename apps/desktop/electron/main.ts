@@ -13300,6 +13300,9 @@ function latchedBootFailure(): Error | null {
  */
 let evyConnectInFlight: Promise<void> | null = null
 type EvyFirstRunStep = 'connect' | 'waiting' | 'signin'
+/** Set while the EVY boot flow runs: the URL the native sign-in opens in the
+ *  browser, so the first-run window can offer it again (or copy it). */
+let evyBrowserOpened: ((url: string) => void) | null = null
 async function ensureEvyConnectionAtBoot(
   opts: { onStep?: (step: EvyFirstRunStep, openedUrl?: string) => void } = {}
 ) {
@@ -13344,7 +13347,13 @@ async function ensureEvyConnectionAtBoot(
         throw new Error('Tu asistente no responde todavía. Vuelve a intentarlo en unos minutos.')
       }
       onStep('signin')
-      const login = await loginRemoteGateway(evy.url)
+      evyBrowserOpened = url => onStep('signin', url)
+      let login: Awaited<ReturnType<typeof loginRemoteGateway>>
+      try {
+        login = await loginRemoteGateway(evy.url)
+      } finally {
+        evyBrowserOpened = null
+      }
       if (!login.ok || !login.connected) {
         throw new Error(login.error || 'EVY sign-in did not complete')
       }
@@ -13367,7 +13376,10 @@ function runEvyFirstRunIfNeeded(): Promise<void> {
   if (evy?.url && _loadNativeTokens(evy.url)) return Promise.resolve()
   return new Promise<void>(resolve => {
     let done = false
-    let lastOpened: string | null = null
+    // The link the window offers belongs to the CURRENT step: the central
+    // /desktop/connect URL while signing in, the assistant's authorize URL
+    // while confirming. A stale connect URL points at a loopback port that
+    // is already closed, so it is dropped when the step moves on.
     const ui = createEvyFirstRunWindow({
       icon: getAppIconPath(),
       log: rememberLog,
@@ -13376,10 +13388,7 @@ function runEvyFirstRunIfNeeded(): Promise<void> {
     const attempt = async () => {
       try {
         await ensureEvyConnectionAtBoot({
-          onStep: (step, url) => {
-            if (url) lastOpened = url
-            ui.show(step, '', lastOpened)
-          }
+          onStep: (step, url) => ui.show(step, '', url ?? null)
         })
         done = true
         ui.close()
@@ -13387,7 +13396,7 @@ function runEvyFirstRunIfNeeded(): Promise<void> {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         rememberLog(`[evy-first-run] failed: ${firstLine(message)}`)
-        ui.show('error', firstLine(message), lastOpened)
+        ui.show('error', firstLine(message), null)
       }
     }
     ui.show('connect', '', null)
@@ -16883,7 +16892,10 @@ async function loginRemoteGateway(rawUrl: unknown) {
   if (strategy === 'native') {
     try {
       const tokens = await runNativeLogin(baseUrl, {
-        openExternal: url => shell.openExternal(url),
+        openExternal: url => {
+          evyBrowserOpened?.(url)
+          return shell.openExternal(url)
+        },
         postJson: (url, body, opts) => postJsonNoAuth(url, body, opts),
         rememberLog
       })

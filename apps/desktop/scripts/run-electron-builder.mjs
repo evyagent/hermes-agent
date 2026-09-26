@@ -64,7 +64,9 @@ if ((process.env.EVY_FLAVOR || "").trim() === "dev") {
     "--config.productName=EVY dev",
     "--config.appId=ai.evyagent.desktop.dev",
     "--config.executableName=EVY-dev",
-    "--config.artifactName=EVY-dev-${version}-${os}-${arch}.${ext}"
+    "--config.artifactName=EVY-dev-${version}-${os}-${arch}.${ext}",
+    "--config.nsis.shortcutName=EVY dev",
+    "--config.nsis.uninstallDisplayName=EVY dev"
   )
 }
 
