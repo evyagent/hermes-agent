@@ -101,6 +101,8 @@ import { ConnectionGlyph } from './connection-glyph'
 import { buildRestGroups, countRestAgents, type FleetAgent, type FleetGroup, fleetRouteKey } from './fleet-rail'
 import { ProfileLaunchContextMenu, ProfileLaunchMenuSection } from './profile-launch-menu'
 import { ProfileRemoteOverrideDialog } from './profile-remote-override-dialog'
+import { EVY_PROFILES_MANAGED } from '@/lib/evy'
+
 import { useFleetRoster } from './use-fleet-roster'
 import { useProfilePrewarm } from './use-profile-prewarm'
 import { useProfileRailRefreshOnActive } from './use-profile-rail-refresh-on-active'
@@ -529,8 +531,12 @@ export function ProfileRail() {
               )
             : activeStrip}
 
-          <AddProfileButton label={p.newProfile} onClick={() => setCreateOpen(true)} />
-          <ImportProfileButton label={p.importProfile} />
+          {!EVY_PROFILES_MANAGED && (
+            <>
+              <AddProfileButton label={p.newProfile} onClick={() => setCreateOpen(true)} />
+              <ImportProfileButton label={p.importProfile} />
+            </>
+          )}
         </div>
       )}
 
@@ -538,12 +544,14 @@ export function ProfileRail() {
           overlay is the only place to edit a profile's SOUL.md, and a
           single-profile user must be able to edit the default's persona
           without first creating a throwaway second profile. */}
-      <ProfilePill active={false} glyph="ellipsis" label={p.manageProfiles} onSelect={() => navigate(PROFILES_ROUTE)} />
+      {!EVY_PROFILES_MANAGED && (
+        <ProfilePill active={false} glyph="ellipsis" label={p.manageProfiles} onSelect={() => navigate(PROFILES_ROUTE)} />
+      )}
 
       {/* Multi-gateway discoverability: before a second source exists, a plug
           pinned beside Manage deep-links to the unified Gateways page. Once
           there are several sources, the same action lives in their selector. */}
-      {!multipleConnections && (
+      {!multipleConnections && !EVY_PROFILES_MANAGED && (
         <ProfilePill
           active={false}
           glyph="plug"

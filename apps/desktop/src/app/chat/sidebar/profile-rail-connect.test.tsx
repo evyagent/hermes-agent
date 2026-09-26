@@ -4,6 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ProfileRail } from './profile-switcher'
 
+// EVY fork: profile/gateway management is hidden (EVY_PROFILES_MANAGED); the
+// cases below assert the upstream entry points and are skipped on purpose.
+
 // The rail's discoverability pills are navigation, not identity — assert the
 // multi-gateway entry point deep-links to Settings → Connections instead of
 // relying on someone finding the pane three levels into Settings (the exact
@@ -99,7 +102,7 @@ afterEach(() => {
 })
 
 describe('ProfileRail multi-gateway entry point', () => {
-  it('deep-links to the unified Settings → Gateways page from the rail', () => {
+  it.skip('deep-links to the unified Settings → Gateways page from the rail', () => {
     render(<ProfileRail />)
 
     const pill = screen.getByRole('button', { name: 'Manage gateways…' })
@@ -108,7 +111,7 @@ describe('ProfileRail multi-gateway entry point', () => {
     expect(navigate).toHaveBeenCalledWith('/settings?tab=gateway')
   })
 
-  it('keeps the entry point visible for single-profile users', () => {
+  it.skip('keeps the entry point visible for single-profile users', () => {
     render(<ProfileRail />)
 
     // The whole point is first-run discoverability: the pill must not be
@@ -117,7 +120,7 @@ describe('ProfileRail multi-gateway entry point', () => {
     expect(screen.getByRole('button', { name: 'Manage profiles…' })).toBeTruthy()
   })
 
-  it('keeps the active profile explicit when gateway identity moves to the statusbar', () => {
+  it.skip('keeps the active profile explicit when gateway identity moves to the statusbar', () => {
     hasMultipleConnections.set(true)
     render(<ProfileRail />)
 

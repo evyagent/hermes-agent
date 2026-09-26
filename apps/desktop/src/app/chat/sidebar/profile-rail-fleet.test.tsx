@@ -6,6 +6,9 @@ import type { DesktopAgentRoster, DesktopConnectionsRegistry } from '@/global'
 
 import { ProfileRail } from './profile-switcher'
 
+// EVY fork: profile/gateway management is hidden (EVY_PROFILES_MANAGED); the
+// cases below assert the upstream entry points and are skipped on purpose.
+
 // The fleet rail: with several registered gateways, every gateway's agents sit
 // on the one strip — the active gateway's squares exactly as before, the rest
 // as at-rest groups behind a hairline + kind glyph. Clicking an at-rest square
@@ -311,7 +314,7 @@ describe('ProfileRail fleet mode', () => {
     expect(screen.getByRole('button', { name: 'scout · Gateway A' })).toBeTruthy()
   })
 
-  it('stays on the single-gateway path with one registered gateway', async () => {
+  it.skip('stays on the single-gateway path with one registered gateway', async () => {
     const container = await renderFleet()
 
     expect(getAgentRoster).not.toHaveBeenCalled()

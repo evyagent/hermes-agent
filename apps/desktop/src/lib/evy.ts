@@ -34,3 +34,11 @@ export const EVY_CAPABILITY_MODES: readonly string[] = ['skills']
 
 /** Hermes self-update surfaces (backend skew toast, Check for Updates…). */
 export const EVY_SELF_UPDATE_ENABLED = false
+
+/** Profiles and gateways are EVY's (one assistant per account): no profile
+ *  management window, no create/import, no "connect a gateway" entry. */
+export const EVY_PROFILES_MANAGED = true
+
+/** The settings footer (export / import / reset the ENGINE config) is gone:
+ *  the engine config is EVY's, and a reset would wipe the tenant's setup. */
+export const EVY_SETTINGS_FOOTER = false

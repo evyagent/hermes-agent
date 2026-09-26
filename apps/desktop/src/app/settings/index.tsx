@@ -48,7 +48,7 @@ import { BILLING_VIEWS, BillingSettings, type BillingSubView } from './billing'
 import { deriveBillingView, useBillingState, useSubscriptionState } from './billing/use-billing-state'
 import { ConfigSettings } from './config-settings'
 import { SECTIONS } from './constants'
-import { EVY_SETTINGS_DEFAULT_VIEW, EVY_SETTINGS_HIDDEN } from '@/lib/evy'
+import { EVY_SETTINGS_DEFAULT_VIEW, EVY_SETTINGS_FOOTER, EVY_SETTINGS_HIDDEN } from '@/lib/evy'
 import { GatewaySettings } from './gateway-settings'
 import { KeybindSettings } from './keybind-settings'
 import { KEYS_VIEWS, KeysSettings, type KeysView } from './keys-settings'
@@ -147,6 +147,13 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
   useEffect(() => {
     if (activeView === 'connections') {
       setActiveView('gateway')
+    }
+  }, [activeView, setActiveView])
+  // EVY fork: a hidden view reached by deep link (status bar, palette, an
+  // old bookmark) lands on the default view instead of engine configuration.
+  useEffect(() => {
+    if (EVY_SETTINGS_HIDDEN.has(activeView)) {
+      setActiveView(EVY_SETTINGS_DEFAULT_VIEW as SettingsViewId)
     }
   }, [activeView, setActiveView])
   // Providers subnav (Accounts vs API keys) lives in its own param so each
@@ -485,7 +492,7 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
     </button>
   )
 
-  const navFooter = (
+  const navFooter = !EVY_SETTINGS_FOOTER ? null : (
     <>
       <Tip label={t.settings.exportConfig}>
         <OverlayIconButton onClick={() => void exportConfig()}>

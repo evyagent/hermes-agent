@@ -6,6 +6,9 @@ import { _resetFleetRosterForTests, refreshFleetRoster } from '@/store/fleet-ros
 import { $connection } from '@/store/session'
 
 import {
+
+// EVY fork: profile/gateway management is hidden (EVY_PROFILES_MANAGED); the
+// cases below assert the upstream entry points and are skipped on purpose.
   ConnectionsRegistrySection,
   findDuplicateConnection,
   normalizeGatewayUrl,
@@ -109,7 +112,7 @@ describe('ConnectionsRegistrySection', () => {
     })
   })
 
-  it('signs a hand-registered Cloud connection in and saves it as oauth (#89529)', async () => {
+  it.skip('signs a hand-registered Cloud connection in and saves it as oauth (#89529)', async () => {
     const oauthLoginConnectionConfig = vi.fn().mockResolvedValue({ connected: true, ok: true })
     Object.assign(window.hermesDesktop!, { oauthLoginConnectionConfig })
 

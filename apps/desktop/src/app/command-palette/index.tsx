@@ -22,6 +22,7 @@ import { getHermesConfigRecord, listAllProfileSessions } from '@/hermes'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
+import { EVY_PROFILES_MANAGED, EVY_SETTINGS_HIDDEN } from '@/lib/evy'
 import {
   Activity,
   AppWindow,
@@ -894,7 +895,9 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
             label: t.shell.statusbar.cron,
             run: go(CRON_ROUTE)
           },
-          { action: 'nav.profiles', icon: Users, id: 'nav-profiles', label: t.profiles.title, run: go(PROFILES_ROUTE) },
+          ...(EVY_PROFILES_MANAGED
+            ? []
+            : [{ action: 'nav.profiles' as const, icon: Users, id: 'nav-profiles', label: t.profiles.title, run: go(PROFILES_ROUTE) }]),
           { action: 'nav.agents', icon: Cpu, id: 'nav-agents', label: t.agents.title, run: go(AGENTS_ROUTE) },
           {
             icon: Starmap,
@@ -1037,7 +1040,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
             label: settingsSectionLabel(section),
             run: go(settingsTab(`config:${section.id}`))
           })),
-          ...NON_CONFIG_SETTINGS.map(entry => ({
+          ...NON_CONFIG_SETTINGS.filter(entry => !EVY_SETTINGS_HIDDEN.has(entry.tab.split('&')[0] ?? '')).map(entry => ({
             icon: entry.icon,
             id: `set-${entry.tab}`,
             keywords: ['settings', ...(entry.keywords ?? [])],
@@ -1350,7 +1353,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
             label: settingsSectionLabel(section),
             run: go(settingsTab(`config:${section.id}`))
           })),
-          ...NON_CONFIG_SETTINGS.map(entry => ({
+          ...NON_CONFIG_SETTINGS.filter(entry => !EVY_SETTINGS_HIDDEN.has(entry.tab.split('&')[0] ?? '')).map(entry => ({
             icon: entry.icon,
             id: `sp-${entry.tab}`,
             keywords: ['settings', ...(entry.keywords ?? [])],

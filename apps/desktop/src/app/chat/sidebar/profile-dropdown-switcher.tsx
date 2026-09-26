@@ -51,6 +51,8 @@ import { PROFILES_ROUTE } from '../../routes'
 
 import { ConnectionGlyph } from './connection-glyph'
 import { buildRestGroups, type FleetAgent, fleetRouteKey } from './fleet-rail'
+import { EVY_PROFILES_MANAGED } from '@/lib/evy'
+
 import { useFleetRoster } from './use-fleet-roster'
 import { useProfilePrewarm } from './use-profile-prewarm'
 
@@ -229,6 +231,8 @@ export function ProfileSwitcher({ compact = false }: { compact?: boolean }) {
               ))}
             </div>
           ))}
+          {!EVY_PROFILES_MANAGED && (
+            <>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
             <Codicon aria-hidden="true" name="add" size="0.875rem" />
@@ -242,6 +246,8 @@ export function ProfileSwitcher({ compact = false }: { compact?: boolean }) {
             <Codicon aria-hidden="true" name="settings-gear" size="0.875rem" />
             <span className="truncate">{p.manageProfiles}</span>
           </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
