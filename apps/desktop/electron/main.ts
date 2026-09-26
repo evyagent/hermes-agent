@@ -319,7 +319,7 @@ import {
   tokenNeedsRefresh
 } from './native-oauth'
 import { runNativeLogin } from './native-oauth-login'
-import { EVY_CONNECTION_ID, evyConnectionEntry, runEvyConnect, waitForGatewayGate } from './evy-connect'
+import { EVY_CONNECTION_ID, evyCentralUrl, evyConnectionEntry, readEvyBuildInfo, runEvyConnect, waitForGatewayGate } from './evy-connect'
 import { createEvyFirstRunWindow } from './evy-first-run-window'
 import { loadNativeTokenSet, type NativeTokenStoreIo, persistNativeTokenSet } from './native-token-store'
 import { registerNativeNotifications } from './notification-ipc'
@@ -1039,7 +1039,9 @@ const BOOT_FAKE_STEP_MS = (() => {
   return Math.max(120, raw)
 })()
 
-const APP_NAME = process.env.HERMES_DESKTOP_APP_NAME || 'EVY'
+// EVY fork: the build flavor (scripts/evy-flavor.mjs) names the app and picks the central.
+const EVY_BUILD = readEvyBuildInfo(process.resourcesPath, p => fs.readFileSync(p, 'utf8'))
+const APP_NAME = process.env.HERMES_DESKTOP_APP_NAME || EVY_BUILD.appName || 'EVY'
 const HUD_WINDOW_TITLE = `${APP_NAME} HUD`
 const TITLEBAR_HEIGHT = 34
 const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
@@ -13312,6 +13314,7 @@ async function ensureEvyConnectionAtBoot(
         { allowDecrease: true }
       )
       const result = await runEvyConnect({
+        centralUrl: evyCentralUrl(process.env, EVY_BUILD),
         openExternal: url => {
           onStep('connect', url)
           return shell.openExternal(url)

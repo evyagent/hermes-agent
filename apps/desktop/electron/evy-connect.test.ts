@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { evyCentralUrl, evyConnectionEntry, isAcceptableGatewayUrl, runEvyConnect, waitForGatewayGate } from './evy-connect'
+import {
+  evyCentralUrl,
+  evyConnectionEntry,
+  isAcceptableGatewayUrl,
+  readEvyBuildInfo,
+  runEvyConnect,
+  waitForGatewayGate
+} from './evy-connect'
 
 async function get(url: string): Promise<{ status: number; text: string }> {
   const res = await fetch(url)
@@ -21,6 +28,19 @@ describe('evy-connect', () => {
     expect(evyCentralUrl({ EVY_CENTRAL_URL: 'https://evy-git-develop-evys-projects.vercel.app/' })).toBe(
       'https://evy-git-develop-evys-projects.vercel.app'
     )
+    // The build flavor sits between the env override and the production default.
+    const dev = readEvyBuildInfo('/res', p =>
+      p === '/res/evy-build.json' ? JSON.stringify({ flavor: 'dev', central: 'https://dev.example/', appName: 'EVY dev' }) : ''
+    )
+    expect(dev.appName).toBe('EVY dev')
+    expect(evyCentralUrl({}, dev)).toBe('https://dev.example')
+    expect(evyCentralUrl({ EVY_CENTRAL_URL: 'https://override.example' }, dev)).toBe('https://override.example')
+    expect(readEvyBuildInfo(undefined, () => '{}')).toEqual({})
+    expect(
+      readEvyBuildInfo('/res', () => {
+        throw new Error('missing')
+      })
+    ).toEqual({})
   })
 
   it('opens the central with a loopback port + state and resolves on the matching callback', async () => {

@@ -27,9 +27,29 @@ export const EVY_CONNECTION_LABEL = 'Mi asistente'
 export const DEFAULT_EVY_CENTRAL_URL = 'https://app.evyagent.ai'
 export const EVY_CONNECT_TIMEOUT_MS = 15 * 60 * 1000
 
-/** The central the build talks to: env override for dev/preview builds. */
-export function evyCentralUrl(env: NodeJS.ProcessEnv = process.env): string {
-  const raw = (env.EVY_CENTRAL_URL || '').trim()
+export interface EvyBuildInfo {
+  flavor?: 'dev' | 'pro'
+  central?: string
+  appName?: string
+}
+
+/** `evy-build.json` next to the packaged app (scripts/evy-flavor.mjs); {} when absent. */
+export function readEvyBuildInfo(
+  resourcesPath: string | undefined,
+  readFile: (p: string) => string
+): EvyBuildInfo {
+  if (!resourcesPath) return {}
+  try {
+    const parsed = JSON.parse(readFile(`${resourcesPath}/evy-build.json`)) as EvyBuildInfo
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/** The central this build talks to: env override, then the build flavor, then production. */
+export function evyCentralUrl(env: NodeJS.ProcessEnv = process.env, build: EvyBuildInfo = {}): string {
+  const raw = (env.EVY_CENTRAL_URL || build.central || '').trim()
   return (raw || DEFAULT_EVY_CENTRAL_URL).replace(/\/+$/, '')
 }
 

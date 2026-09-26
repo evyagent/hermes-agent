@@ -28,7 +28,7 @@
     "profile:main:cpu": "tsc --build tsconfig.electron.json && wait-on http://127.0.0.1:5174 && node scripts/bundle-electron-main.mjs --dev && cross-env XCURSOR_SIZE=24 NODE_OPTIONS=--cpu-prof HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 electron .",
     "start": "npm run build && electron .",
     "prebuild": "node scripts/assert-root-install.mjs && npm run clean",
-    "build": "node scripts/assert-root-install.mjs && node scripts/write-build-stamp.mjs && vite build && node scripts/bundle-electron-main.mjs && node scripts/stage-native-deps.mjs",
+    "build": "node scripts/assert-root-install.mjs && node scripts/write-build-stamp.mjs && node scripts/evy-flavor.mjs && vite build && node scripts/bundle-electron-main.mjs && node scripts/stage-native-deps.mjs",
     "postbuild": "node scripts/assert-dist-built.mjs",
     "prebuilder": "node scripts/patch-electron-builder-mac-binary.mjs",
     "builder": "cross-env NODE_OPTIONS=--max-old-space-size=16384 node scripts/run-electron-builder.mjs",
@@ -40,6 +40,7 @@
     "dist:win": "npm run build && npm run builder -- --win",
     "dist:win:msi": "npm run build && npm run builder -- --win msi",
     "dist:win:nsis": "npm run build && npm run builder -- --win nsis",
+    "dist:win:dev": "cross-env EVY_FLAVOR=dev npm run build && npm run builder -- --win nsis --config.productName=\"EVY dev\" --config.appId=ai.evyagent.desktop.dev --config.executableName=EVY-dev --config.artifactName=EVY-dev-${version}-${os}-${arch}.${ext}",
     "dist:linux": "npm run build && npm run builder -- --linux AppImage deb rpm",
     "perf": "node scripts/perf/run.mjs",
     "update:shim": "bash ../../scripts/desktop-update/repro.sh shim",
@@ -226,6 +227,10 @@
       {
         "from": "assets/icon.ico",
         "to": "icon.ico"
+      },
+      {
+        "from": "build/evy-build.json",
+        "to": "evy-build.json"
       }
     ],
     "asar": true,
