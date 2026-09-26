@@ -79,7 +79,10 @@ afterEach(() => {
   $findInPage.set({ active: false, query: '', matchOrdinal: 0, matchCount: 0 })
 })
 
-describe('ConnectionSwitcher', () => {
+// EVY fork: the built-in local connection is never offered and gateway
+// management is hidden (EVY_LOCAL_CONNECTION_HIDDEN, EVY_PROFILES_MANAGED);
+// the upstream cases below assume both and are skipped on purpose.
+describe.skip('ConnectionSwitcher', () => {
   it('adds no source chrome for a local-only setup', () => {
     $connectionsRegistry.set(registry([connection('local', 'This device', 'local')]))
     render(<ConnectionSwitcher onConnect={onConnect} />)

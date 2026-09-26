@@ -2,6 +2,7 @@ import { atom, computed } from 'nanostores'
 
 import { getProfiles } from '@/api/profiles'
 import type { DesktopConnectionsRegistry } from '@/global'
+import { EVY_LOCAL_CONNECTION_HIDDEN } from '@/lib/evy'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
 import { persistStringRecord, storedStringRecord } from '@/lib/storage'
 import { BACKEND_BOOT_WAIT_TIMEOUT_MS, isTimeoutError, withTimeout } from '@/lib/with-timeout'
@@ -54,8 +55,13 @@ export const $activeConnectionId = computed($connection, connection => connectio
 
 export const $hasMultipleConnections = computed(
   $connectionsRegistry,
-  registry => (registry?.connections.length ?? 0) > 1
+  registry => visibleConnections(registry?.connections ?? []).length > 1
 )
+
+/** EVY fork: the built-in local connection is never offered. */
+export function visibleConnections<T extends { id: string }>(connections: readonly T[]): T[] {
+  return EVY_LOCAL_CONNECTION_HIDDEN ? connections.filter(c => c.id !== 'local') : [...connections]
+}
 
 const $lastProfileByConnection = atom<Record<string, string>>(storedStringRecord(LAST_PROFILE_STORAGE_KEY))
 let pendingTarget: null | string = null

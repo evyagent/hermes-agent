@@ -22,10 +22,17 @@ import {
   connectionTooltip,
   sortConnectionsForDisplay
 } from '@/lib/connection-display'
+import { EVY_PROFILES_MANAGED } from '@/lib/evy'
 import { triggerHaptic } from '@/lib/haptics'
 import { Loader2 } from '@/lib/icons'
 import { cn } from '@/lib/utils'
-import { $activeConnectionId, $connectionsRegistry, $pendingConnectionId, selectConnection } from '@/store/connections'
+import {
+  $activeConnectionId,
+  $connectionsRegistry,
+  $pendingConnectionId,
+  selectConnection,
+  visibleConnections
+} from '@/store/connections'
 import { closeFindBar } from '@/store/find-in-page'
 import { notifyError } from '@/store/notifications'
 
@@ -41,7 +48,10 @@ export function ConnectionSwitcher({ compact = false, onConnect }: { compact?: b
   const connectionListRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const connections = useMemo(() => sortConnectionsForDisplay(registry?.connections ?? []), [registry?.connections])
+  const connections = useMemo(
+    () => sortConnectionsForDisplay(visibleConnections(registry?.connections ?? [])),
+    [registry?.connections]
+  )
 
   const activeConnection = connections.find(connection => connection.id === activeConnectionId)
   const searchable = connections.length >= CONNECTION_SEARCH_THRESHOLD
@@ -202,10 +212,14 @@ export function ConnectionSwitcher({ compact = false, onConnect }: { compact?: b
               ))
             )}
           </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator className={searchable ? 'm-0' : undefined} />
-          <DropdownMenuItem className={searchable ? dropdownMenuRow : undefined} onSelect={onConnect}>
-            <ManageGatewaysLabel label={t.profiles.connectGateway} />
-          </DropdownMenuItem>
+          {!EVY_PROFILES_MANAGED && (
+            <>
+              <DropdownMenuSeparator className={searchable ? 'm-0' : undefined} />
+              <DropdownMenuItem className={searchable ? dropdownMenuRow : undefined} onSelect={onConnect}>
+                <ManageGatewaysLabel label={t.profiles.connectGateway} />
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

@@ -15,7 +15,6 @@ export const EVY_SETTINGS_HIDDEN: ReadonlySet<string> = new Set([
   'config:browser',
   'config:memory',
   'config:advanced',
-  'vault',
   'billing',
   'providers',
   'gateway',
@@ -25,12 +24,18 @@ export const EVY_SETTINGS_HIDDEN: ReadonlySet<string> = new Set([
 /** The first settings view the EVY desktop opens on. */
 export const EVY_SETTINGS_DEFAULT_VIEW = 'config:chat'
 
-/** Sidebar rows owned by the EVY panel instead (Conexiones owns messaging). */
-export const EVY_SIDEBAR_NAV_HIDDEN: ReadonlySet<string> = new Set(['messaging'])
+/** Sidebar rows hidden in the EVY desktop (none since 2026-09-26: messaging
+ *  is what the customer connects, so it stays). */
+export const EVY_SIDEBAR_NAV_HIDDEN: ReadonlySet<string> = new Set<string>()
 
-/** Capabilities tabs: skills stay (EVY skills included); toolsets, connectors
- *  and plugins are engine configuration or owned by the EVY panel. */
-export const EVY_CAPABILITY_MODES: readonly string[] = ['skills']
+/** Capabilities tabs: all of them (owner decision 2026-09-26): skills,
+ *  toolsets, connectors and plugins are what the customer connects. */
+export const EVY_CAPABILITY_MODES: readonly string[] = ['skills', 'toolsets', 'connectors', 'plugins']
+
+/** The registry's built-in "This device" (local backend) never shows: the
+ *  EVY desktop only talks to the customer's assistant. Picking it would
+ *  land on Hermes' local onboarding ("connect a model provider"). */
+export const EVY_LOCAL_CONNECTION_HIDDEN = true
 
 /** Hermes self-update surfaces (backend skew toast, Check for Updates…). */
 export const EVY_SELF_UPDATE_ENABLED = false
