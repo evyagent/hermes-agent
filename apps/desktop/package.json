@@ -40,7 +40,7 @@
     "dist:win": "npm run build && npm run builder -- --win",
     "dist:win:msi": "npm run build && npm run builder -- --win msi",
     "dist:win:nsis": "npm run build && npm run builder -- --win nsis",
-    "dist:win:dev": "cross-env EVY_FLAVOR=dev npm run build && npm run builder -- --win nsis --config.productName=\"EVY dev\" --config.appId=ai.evyagent.desktop.dev --config.executableName=EVY-dev --config.artifactName=EVY-dev-${version}-${os}-${arch}.${ext}",
+    "dist:win:dev": "cross-env EVY_FLAVOR=dev npm run build && cross-env EVY_FLAVOR=dev npm run builder -- --win nsis",
     "dist:linux": "npm run build && npm run builder -- --linux AppImage deb rpm",
     "perf": "node scripts/perf/run.mjs",
     "update:shim": "bash ../../scripts/desktop-update/repro.sh shim",

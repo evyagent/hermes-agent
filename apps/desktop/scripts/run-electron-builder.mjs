@@ -56,6 +56,17 @@ if (dist && fs.existsSync(distBinary(dist))) {
   )
 }
 args.push(...process.argv.slice(2))
+// EVY fork: the dev flavor (scripts/evy-flavor.mjs) is its own product so both
+// installs coexist. Passed here, in JS, because `${version}` in an npm script
+// is eaten by the shell before electron-builder can expand it.
+if ((process.env.EVY_FLAVOR || "").trim() === "dev") {
+  args.push(
+    "--config.productName=EVY dev",
+    "--config.appId=ai.evyagent.desktop.dev",
+    "--config.executableName=EVY-dev",
+    "--config.artifactName=EVY-dev-${version}-${os}-${arch}.${ext}"
+  )
+}
 
 const result = spawnSync(process.execPath, [electronBuilderCli(), ...args], {
   stdio: "inherit",
